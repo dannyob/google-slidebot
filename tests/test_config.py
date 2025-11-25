@@ -1,6 +1,5 @@
 """Tests for configuration module."""
 
-import os
 from pathlib import Path
 
 from google_slidebot.config import (

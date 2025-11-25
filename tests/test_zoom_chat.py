@@ -91,7 +91,7 @@ class TestFormatLinksMessage:
         slide = Slide(
             number=1,
             title="Introduction",
-            links=[Link(text="Docs", url="https://docs.example.com")]
+            links=[Link(text="Docs", url="https://docs.example.com")],
         )
         result = format_links_message(slide)
         assert "Slide 1" in result
@@ -107,7 +107,7 @@ class TestFormatLinksMessage:
             links=[
                 Link(text="GitHub", url="https://github.com/example"),
                 Link(text="API", url="https://api.example.com"),
-            ]
+            ],
         )
         result = format_links_message(slide)
         assert "GitHub" in result

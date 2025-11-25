@@ -1,8 +1,5 @@
 """Tests for TUI module."""
 
-import pytest
-from unittest.mock import MagicMock, AsyncMock
-
 from google_slidebot.slides import Slide, Link
 from google_slidebot.tui import SlideListScreen, LinkPreviewScreen, SlidebotApp
 
@@ -15,7 +12,11 @@ class TestSlideListScreen:
         slides = [
             Slide(number=1, title="Intro", links=[Link("x", "http://x.com")]),
             Slide(number=2, title="Main", links=[]),
-            Slide(number=3, title="End", links=[Link("a", "http://a.com"), Link("b", "http://b.com")]),
+            Slide(
+                number=3,
+                title="End",
+                links=[Link("a", "http://a.com"), Link("b", "http://b.com")],
+            ),
         ]
         screen = SlideListScreen(slides)
         items = screen._build_list_items()
@@ -37,7 +38,7 @@ class TestLinkPreviewScreen:
             links=[
                 Link("Docs", "https://docs.example.com"),
                 Link("API", "https://api.example.com"),
-            ]
+            ],
         )
         screen = LinkPreviewScreen(slide)
         content = screen._build_content()

@@ -11,7 +11,12 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
-from google_slidebot.config import KEYRING_SERVICE, KEYRING_TOKEN_KEY, CREDENTIALS_FILE, GOOGLE_SCOPES
+from google_slidebot.config import (
+    KEYRING_SERVICE,
+    KEYRING_TOKEN_KEY,
+    CREDENTIALS_FILE,
+    GOOGLE_SCOPES,
+)
 
 
 def extract_presentation_id(url_or_id: str) -> str:
@@ -97,7 +102,9 @@ def get_credentials() -> Credentials:
             f"Download from Google Cloud Console and place it there."
         )
 
-    flow = InstalledAppFlow.from_client_secrets_file(str(CREDENTIALS_FILE), GOOGLE_SCOPES)
+    flow = InstalledAppFlow.from_client_secrets_file(
+        str(CREDENTIALS_FILE), GOOGLE_SCOPES
+    )
     creds = flow.run_local_server(port=0)
     store_token(json.loads(creds.to_json()))
     return creds

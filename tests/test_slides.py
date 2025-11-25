@@ -10,12 +10,9 @@ from google_slidebot.slides import (
     store_token,
     delete_stored_token,
     get_credentials,
-    Slide,
-    Link,
     extract_slides_from_presentation,
     fetch_presentation,
 )
-from google_slidebot.config import CREDENTIALS_FILE
 
 
 class TestExtractPresentationId:
@@ -116,7 +113,7 @@ class TestGetCredentials:
         mock_creds.to_json.return_value = '{"token": "new", "refresh_token": "xyz"}'
         mock_creds_class.from_authorized_user_info.return_value = mock_creds
 
-        result = get_credentials()
+        get_credentials()
 
         mock_creds.refresh.assert_called_once()
         mock_store.assert_called_once()
@@ -149,17 +146,19 @@ class TestExtractSlidesFromPresentation:
                                         {
                                             "textRun": {
                                                 "content": "Welcome Slide\n",
-                                                "style": {}
+                                                "style": {},
                                             }
                                         },
                                         {
                                             "textRun": {
                                                 "content": "Click here",
                                                 "style": {
-                                                    "link": {"url": "https://example.com"}
-                                                }
+                                                    "link": {
+                                                        "url": "https://example.com"
+                                                    }
+                                                },
                                             }
-                                        }
+                                        },
                                     ]
                                 }
                             }
@@ -188,7 +187,12 @@ class TestExtractSlidesFromPresentation:
                             "shape": {
                                 "text": {
                                     "textElements": [
-                                        {"textRun": {"content": "No links here", "style": {}}}
+                                        {
+                                            "textRun": {
+                                                "content": "No links here",
+                                                "style": {},
+                                            }
+                                        }
                                     ]
                                 }
                             }

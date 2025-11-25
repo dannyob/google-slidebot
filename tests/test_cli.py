@@ -1,6 +1,5 @@
 """Tests for CLI module."""
 
-import pytest
 from click.testing import CliRunner
 from unittest.mock import patch, MagicMock, AsyncMock
 
@@ -45,7 +44,12 @@ class TestCli:
         mock_app_class.return_value = mock_app
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["https://docs.google.com/presentation/d/valid-id-12345678901234567890/edit"])
+        runner.invoke(
+            cli,
+            [
+                "https://docs.google.com/presentation/d/valid-id-12345678901234567890/edit"
+            ],
+        )
 
         # Should have attempted to fetch and run
         mock_fetch.assert_called_once_with("valid-id-12345678901234567890")

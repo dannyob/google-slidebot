@@ -6,7 +6,6 @@ import click
 from google_slidebot.slides import extract_presentation_id, fetch_presentation
 from google_slidebot.zoom_chat import ZoomChat
 from google_slidebot.tui import SlidebotApp
-from google_slidebot.config import CDP_URL
 
 
 def print_chrome_instructions():
@@ -56,7 +55,9 @@ def cli(presentation_url: str):
     except Exception as e:
         raise click.ClickException(f"Failed to fetch presentation: {e}")
 
-    click.echo(f"Found {len(slides)} slides with {sum(len(s.links) for s in slides)} total links")
+    click.echo(
+        f"Found {len(slides)} slides with {sum(len(s.links) for s in slides)} total links"
+    )
 
     # Connect to Zoom
     print_chrome_instructions()

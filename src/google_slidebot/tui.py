@@ -33,7 +33,7 @@ class SlideListScreen(Screen):
         yield Header()
         yield ListView(
             *[ListItem(Label(item)) for item in self._build_list_items()],
-            id="slide-list"
+            id="slide-list",
         )
         yield Footer()
 

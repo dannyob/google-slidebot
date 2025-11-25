@@ -122,8 +122,8 @@ def normalize_to_ascii(text: str) -> str:
         # Curly quotes
         "\u2018": "'",  # '
         "\u2019": "'",  # '
-        "\u201C": '"',  # "
-        "\u201D": '"',  # "
+        "\u201c": '"',  # "
+        "\u201d": '"',  # "
         # Dashes
         "\u2013": "-",  # en dash
         "\u2014": "-",  # em dash
@@ -132,7 +132,7 @@ def normalize_to_ascii(text: str) -> str:
         # Bullet
         "\u2022": "*",
         # Non-breaking space
-        "\u00A0": " ",
+        "\u00a0": " ",
     }
     for unicode_char, ascii_char in replacements.items():
         text = text.replace(unicode_char, ascii_char)
