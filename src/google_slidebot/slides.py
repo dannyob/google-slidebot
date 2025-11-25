@@ -2,6 +2,7 @@
 
 import json
 import re
+from dataclasses import dataclass, field
 from typing import Optional
 
 import keyring
@@ -99,3 +100,65 @@ def get_credentials() -> Credentials:
     creds = flow.run_local_server(port=0)
     store_token(json.loads(creds.to_json()))
     return creds
+
+
+@dataclass
+class Link:
+    """A hyperlink extracted from a slide."""
+
+    text: str
+    url: str
+
+
+@dataclass
+class Slide:
+    """A slide with its extracted content."""
+
+    number: int
+    title: str
+    links: list[Link] = field(default_factory=list)
+
+
+def extract_slides_from_presentation(presentation_data: dict) -> list[Slide]:
+    """Extract slide data from Slides API response.
+
+    Args:
+        presentation_data: Response from presentations().get()
+
+    Returns:
+        List of Slide objects with titles and links
+    """
+    slides = []
+
+    for idx, slide_data in enumerate(presentation_data.get("slides", []), start=1):
+        title = ""
+        links = []
+
+        for element in slide_data.get("pageElements", []):
+            shape = element.get("shape")
+            if shape is None:
+                continue
+
+            text_elements = shape.get("text", {}).get("textElements", [])
+
+            for text_element in text_elements:
+                text_run = text_element.get("textRun")
+                if not text_run:
+                    continue
+
+                content = text_run.get("content", "").strip()
+                style = text_run.get("style", {})
+                link_info = style.get("link", {})
+                url = link_info.get("url")
+
+                # First non-empty text becomes title
+                if not title and content:
+                    title = content
+
+                # Collect links
+                if url:
+                    links.append(Link(text=content or url, url=url))
+
+        slides.append(Slide(number=idx, title=title or f"Slide {idx}", links=links))
+
+    return slides

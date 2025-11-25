@@ -10,6 +10,9 @@ from google_slidebot.slides import (
     store_token,
     delete_stored_token,
     get_credentials,
+    Slide,
+    Link,
+    extract_slides_from_presentation,
 )
 from google_slidebot.config import CREDENTIALS_FILE
 
@@ -126,3 +129,81 @@ class TestGetCredentials:
 
         with pytest.raises(FileNotFoundError, match="credentials.json"):
             get_credentials()
+
+
+class TestExtractSlidesFromPresentation:
+    """Tests for extract_slides_from_presentation."""
+
+    def test_extracts_slide_with_title_and_links(self):
+        """Should extract title and links from slide."""
+        # Minimal Slides API response structure
+        presentation_data = {
+            "slides": [
+                {
+                    "pageElements": [
+                        {
+                            "shape": {
+                                "text": {
+                                    "textElements": [
+                                        {
+                                            "textRun": {
+                                                "content": "Welcome Slide\n",
+                                                "style": {}
+                                            }
+                                        },
+                                        {
+                                            "textRun": {
+                                                "content": "Click here",
+                                                "style": {
+                                                    "link": {"url": "https://example.com"}
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        slides = extract_slides_from_presentation(presentation_data)
+
+        assert len(slides) == 1
+        assert slides[0].number == 1
+        assert "Welcome" in slides[0].title
+        assert len(slides[0].links) == 1
+        assert slides[0].links[0].url == "https://example.com"
+        assert slides[0].links[0].text == "Click here"
+
+    def test_handles_slide_with_no_links(self):
+        """Should handle slides without links."""
+        presentation_data = {
+            "slides": [
+                {
+                    "pageElements": [
+                        {
+                            "shape": {
+                                "text": {
+                                    "textElements": [
+                                        {"textRun": {"content": "No links here", "style": {}}}
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        slides = extract_slides_from_presentation(presentation_data)
+
+        assert len(slides) == 1
+        assert slides[0].links == []
+
+    def test_handles_empty_presentation(self):
+        """Should return empty list for presentation with no slides."""
+        presentation_data = {"slides": []}
+        slides = extract_slides_from_presentation(presentation_data)
+        assert slides == []
