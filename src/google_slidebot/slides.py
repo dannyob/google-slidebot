@@ -1,6 +1,12 @@
 """Google Slides API integration."""
 
+import json
 import re
+from typing import Optional
+
+import keyring
+
+from google_slidebot.config import KEYRING_SERVICE, KEYRING_TOKEN_KEY
 
 
 def extract_presentation_id(url_or_id: str) -> str:
@@ -26,3 +32,29 @@ def extract_presentation_id(url_or_id: str) -> str:
         raise ValueError(f"Invalid presentation URL or ID: {url_or_id}")
 
     return match.group(1)
+
+
+def get_stored_token() -> Optional[dict]:
+    """Retrieve OAuth token from keyring.
+
+    Returns:
+        Token dict if found, None otherwise
+    """
+    stored = keyring.get_password(KEYRING_SERVICE, KEYRING_TOKEN_KEY)
+    if stored is None:
+        return None
+    return json.loads(stored)
+
+
+def store_token(token_data: dict) -> None:
+    """Store OAuth token in keyring.
+
+    Args:
+        token_data: Token dict to store
+    """
+    keyring.set_password(KEYRING_SERVICE, KEYRING_TOKEN_KEY, json.dumps(token_data))
+
+
+def delete_stored_token() -> None:
+    """Delete OAuth token from keyring."""
+    keyring.delete_password(KEYRING_SERVICE, KEYRING_TOKEN_KEY)
