@@ -9,7 +9,9 @@ from google_slidebot.slides import (
     get_stored_token,
     store_token,
     delete_stored_token,
+    get_credentials,
 )
+from google_slidebot.config import CREDENTIALS_FILE
 
 
 class TestExtractPresentationId:
@@ -73,3 +75,54 @@ class TestTokenStorage:
         """Should call keyring delete."""
         delete_stored_token()
         mock_keyring.delete_password.assert_called_once()
+
+
+class TestGetCredentials:
+    """Tests for get_credentials function."""
+
+    @patch("google_slidebot.slides.get_stored_token")
+    @patch("google_slidebot.slides.Credentials")
+    def test_returns_valid_credentials_from_keyring(
+        self, mock_creds_class, mock_get_token
+    ):
+        """Should return credentials when valid token in keyring."""
+        mock_get_token.return_value = {"token": "abc", "refresh_token": "xyz"}
+        mock_creds = MagicMock()
+        mock_creds.valid = True
+        mock_creds_class.from_authorized_user_info.return_value = mock_creds
+
+        result = get_credentials()
+
+        assert result == mock_creds
+        mock_creds_class.from_authorized_user_info.assert_called_once()
+
+    @patch("google_slidebot.slides.get_stored_token")
+    @patch("google_slidebot.slides.Credentials")
+    @patch("google_slidebot.slides.store_token")
+    @patch("google_slidebot.slides.Request")
+    def test_refreshes_expired_credentials(
+        self, mock_request, mock_store, mock_creds_class, mock_get_token
+    ):
+        """Should refresh and store when token expired but has refresh_token."""
+        mock_get_token.return_value = {"token": "old", "refresh_token": "xyz"}
+        mock_creds = MagicMock()
+        mock_creds.valid = False
+        mock_creds.expired = True
+        mock_creds.refresh_token = "xyz"
+        mock_creds.to_json.return_value = '{"token": "new", "refresh_token": "xyz"}'
+        mock_creds_class.from_authorized_user_info.return_value = mock_creds
+
+        result = get_credentials()
+
+        mock_creds.refresh.assert_called_once()
+        mock_store.assert_called_once()
+
+    @patch("google_slidebot.slides.get_stored_token")
+    @patch("google_slidebot.slides.CREDENTIALS_FILE", new_callable=lambda: MagicMock())
+    def test_raises_when_no_credentials_file(self, mock_creds_file, mock_get_token):
+        """Should raise FileNotFoundError when credentials.json missing."""
+        mock_get_token.return_value = None
+        mock_creds_file.exists.return_value = False
+
+        with pytest.raises(FileNotFoundError, match="credentials.json"):
+            get_credentials()

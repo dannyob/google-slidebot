@@ -5,8 +5,11 @@ import re
 from typing import Optional
 
 import keyring
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
 
-from google_slidebot.config import KEYRING_SERVICE, KEYRING_TOKEN_KEY
+from google_slidebot.config import KEYRING_SERVICE, KEYRING_TOKEN_KEY, CREDENTIALS_FILE, GOOGLE_SCOPES
 
 
 def extract_presentation_id(url_or_id: str) -> str:
@@ -58,3 +61,41 @@ def store_token(token_data: dict) -> None:
 def delete_stored_token() -> None:
     """Delete OAuth token from keyring."""
     keyring.delete_password(KEYRING_SERVICE, KEYRING_TOKEN_KEY)
+
+
+def get_credentials() -> Credentials:
+    """Get valid Google OAuth credentials.
+
+    Tries keyring first, refreshes if expired, or runs OAuth flow.
+
+    Returns:
+        Valid Credentials object
+
+    Raises:
+        FileNotFoundError: If credentials.json not found and no valid token
+    """
+    creds = None
+    token_data = get_stored_token()
+
+    if token_data:
+        creds = Credentials.from_authorized_user_info(token_data, GOOGLE_SCOPES)
+
+    if creds and creds.valid:
+        return creds
+
+    if creds and creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+        store_token(json.loads(creds.to_json()))
+        return creds
+
+    # Need to run OAuth flow
+    if not CREDENTIALS_FILE.exists():
+        raise FileNotFoundError(
+            f"credentials.json not found at {CREDENTIALS_FILE}\n"
+            f"Download from Google Cloud Console and place it there."
+        )
+
+    flow = InstalledAppFlow.from_client_secrets_file(str(CREDENTIALS_FILE), GOOGLE_SCOPES)
+    creds = flow.run_local_server(port=0)
+    store_token(json.loads(creds.to_json()))
+    return creds
