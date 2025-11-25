@@ -109,6 +109,36 @@ class ZoomChat:
             raise RuntimeError(f"Failed to send message: {result}")
 
 
+def normalize_to_ascii(text: str) -> str:
+    """Normalize unicode characters to ASCII equivalents.
+
+    Args:
+        text: String that may contain unicode characters
+
+    Returns:
+        ASCII-safe string with common replacements
+    """
+    replacements = {
+        # Curly quotes
+        "\u2018": "'",  # '
+        "\u2019": "'",  # '
+        "\u201C": '"',  # "
+        "\u201D": '"',  # "
+        # Dashes
+        "\u2013": "-",  # en dash
+        "\u2014": "-",  # em dash
+        # Ellipsis
+        "\u2026": "...",
+        # Bullet
+        "\u2022": "*",
+        # Non-breaking space
+        "\u00A0": " ",
+    }
+    for unicode_char, ascii_char in replacements.items():
+        text = text.replace(unicode_char, ascii_char)
+    return text
+
+
 def format_links_message(slide: Slide) -> str:
     """Format slide links for Zoom chat.
 
@@ -116,13 +146,20 @@ def format_links_message(slide: Slide) -> str:
         slide: Slide with links to format
 
     Returns:
-        Formatted message string
+        Formatted message string (ASCII-safe)
     """
     if not slide.links:
-        return f"Slide {slide.number} ({slide.title}) has no links."
+        title = normalize_to_ascii(slide.title)
+        return f"Slide {slide.number} ({title}) has no links."
 
-    lines = [f"Links from Slide {slide.number}: {slide.title}"]
+    title = normalize_to_ascii(slide.title)
+    lines = [f"Links from Slide {slide.number}: {title}"]
     for link in slide.links:
-        lines.append(f"• {link.text}: {link.url}")
+        link_text = normalize_to_ascii(link.text)
+        # Don't repeat URL if the link text is the same as the URL
+        if link_text == link.url:
+            lines.append(f"- {link.url}")
+        else:
+            lines.append(f"- {link_text}: {link.url}")
 
     return "\n".join(lines)

@@ -13,7 +13,6 @@ class SlideListScreen(Screen):
 
     BINDINGS = [
         Binding("q", "quit", "Quit"),
-        Binding("enter", "select", "View Links"),
         Binding("escape", "quit", "Quit"),
     ]
 
@@ -27,7 +26,7 @@ class SlideListScreen(Screen):
         for slide in self.slides:
             link_count = len(slide.links)
             link_text = f"({link_count} link{'s' if link_count != 1 else ''})"
-            items.append(f"{slide.number}. {slide.title} {link_text}")
+            items.append(f"{slide.number:2d}. {link_text} {slide.title}")
         return items
 
     def compose(self) -> ComposeResult:
@@ -38,13 +37,11 @@ class SlideListScreen(Screen):
         )
         yield Footer()
 
-    def action_select(self) -> None:
-        """Handle enter key - show links for selected slide."""
-        list_view = self.query_one("#slide-list", ListView)
-        if list_view.highlighted_child is not None:
-            index = list_view.index
-            if index is not None and 0 <= index < len(self.slides):
-                self.app.push_screen(LinkPreviewScreen(self.slides[index]))
+    def on_list_view_selected(self, event: ListView.Selected) -> None:
+        """Handle item selection from ListView."""
+        index = event.list_view.index
+        if index is not None and 0 <= index < len(self.slides):
+            self.app.push_screen(LinkPreviewScreen(self.slides[index]))
 
     def action_quit(self) -> None:
         """Quit the application."""
