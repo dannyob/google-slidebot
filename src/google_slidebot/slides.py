@@ -9,6 +9,7 @@ import keyring
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+from googleapiclient.discovery import build
 
 from google_slidebot.config import KEYRING_SERVICE, KEYRING_TOKEN_KEY, CREDENTIALS_FILE, GOOGLE_SCOPES
 
@@ -162,3 +163,18 @@ def extract_slides_from_presentation(presentation_data: dict) -> list[Slide]:
         slides.append(Slide(number=idx, title=title or f"Slide {idx}", links=links))
 
     return slides
+
+
+def fetch_presentation(presentation_id: str) -> list[Slide]:
+    """Fetch a presentation and extract its slides.
+
+    Args:
+        presentation_id: Google Slides presentation ID
+
+    Returns:
+        List of Slide objects
+    """
+    creds = get_credentials()
+    service = build("slides", "v1", credentials=creds)
+    presentation = service.presentations().get(presentationId=presentation_id).execute()
+    return extract_slides_from_presentation(presentation)

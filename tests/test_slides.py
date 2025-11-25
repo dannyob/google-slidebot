@@ -13,6 +13,7 @@ from google_slidebot.slides import (
     Slide,
     Link,
     extract_slides_from_presentation,
+    fetch_presentation,
 )
 from google_slidebot.config import CREDENTIALS_FILE
 
@@ -207,3 +208,40 @@ class TestExtractSlidesFromPresentation:
         presentation_data = {"slides": []}
         slides = extract_slides_from_presentation(presentation_data)
         assert slides == []
+
+
+class TestFetchPresentation:
+    """Tests for fetch_presentation."""
+
+    @patch("google_slidebot.slides.build")
+    @patch("google_slidebot.slides.get_credentials")
+    def test_fetches_and_extracts_slides(self, mock_get_creds, mock_build):
+        """Should fetch presentation and return Slide objects."""
+        mock_creds = MagicMock()
+        mock_get_creds.return_value = mock_creds
+
+        mock_service = MagicMock()
+        mock_build.return_value = mock_service
+        mock_service.presentations().get().execute.return_value = {
+            "slides": [
+                {
+                    "pageElements": [
+                        {
+                            "shape": {
+                                "text": {
+                                    "textElements": [
+                                        {"textRun": {"content": "Test", "style": {}}}
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        slides = fetch_presentation("fake-presentation-id")
+
+        assert len(slides) == 1
+        assert slides[0].title == "Test"
+        mock_build.assert_called_once_with("slides", "v1", credentials=mock_creds)
