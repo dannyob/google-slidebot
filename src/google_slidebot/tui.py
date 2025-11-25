@@ -90,3 +90,52 @@ class LinkPreviewScreen(Screen):
     def action_back(self) -> None:
         """Go back to slide list."""
         self.app.pop_screen()
+
+
+class SlidebotApp(App):
+    """Main Textual application for Slidebot."""
+
+    TITLE = "Google Slidebot"
+    CSS = """
+    #slide-list {
+        height: 1fr;
+    }
+    #link-content {
+        padding: 1 2;
+    }
+    """
+
+    def __init__(self, slides: list[Slide], zoom_chat, **kwargs):
+        super().__init__(**kwargs)
+        self.slides = slides
+        self.zoom_chat = zoom_chat
+
+    def on_mount(self) -> None:
+        """Push the initial screen."""
+        self.push_screen(SlideListScreen(self.slides))
+
+    def send_links(self, slide: Slide) -> None:
+        """Send slide links to Zoom chat."""
+        from google_slidebot.zoom_chat import format_links_message
+
+        if not slide.links:
+            self.notify("No links to send", severity="warning")
+            return
+
+        if not self.zoom_chat:
+            self.notify("Zoom not connected", severity="error")
+            return
+
+        message = format_links_message(slide)
+
+        # Run async send in background
+        self.run_worker(self._send_to_zoom(message))
+
+    async def _send_to_zoom(self, message: str) -> None:
+        """Background worker to send message."""
+        try:
+            await self.zoom_chat.send_message(message)
+            self.notify("Sent!", severity="information")
+            self.pop_screen()  # Back to slide list
+        except Exception as e:
+            self.notify(f"Send failed: {e}", severity="error")

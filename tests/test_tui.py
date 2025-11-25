@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import MagicMock, AsyncMock
 
 from google_slidebot.slides import Slide, Link
-from google_slidebot.tui import SlideListScreen, LinkPreviewScreen
+from google_slidebot.tui import SlideListScreen, LinkPreviewScreen, SlidebotApp
 
 
 class TestSlideListScreen:
@@ -55,3 +55,19 @@ class TestLinkPreviewScreen:
         content = screen._build_content()
 
         assert "no links" in content.lower()
+
+
+class TestSlidebotApp:
+    """Tests for SlidebotApp."""
+
+    def test_app_has_title(self):
+        """App should have appropriate title."""
+        slides = [Slide(number=1, title="Test", links=[])]
+        app = SlidebotApp(slides=slides, zoom_chat=None)
+        assert "slidebot" in app.TITLE.lower() or "slide" in app.TITLE.lower()
+
+    def test_app_stores_slides(self):
+        """App should store slides reference."""
+        slides = [Slide(number=1, title="Test", links=[])]
+        app = SlidebotApp(slides=slides, zoom_chat=None)
+        assert app.slides == slides
