@@ -4,26 +4,45 @@ This file provides guidance to Claude Code when working with this repository.
 
 ## Project Overview
 
-A Python CLI application
+A CLI tool that extracts links from Google Slides presentations and posts them to Zoom chat via a TUI interface. Used during live presentations to share relevant links with attendees.
+
+## Architecture
+
+- **CLI** (`cli.py`) - Entry point, orchestrates OAuth, fetches slides, connects to Zoom, launches TUI
+- **Slides** (`slides.py`) - Google OAuth + Slides API integration, extracts links from presentations
+- **Zoom Chat** (`zoom_chat.py`) - Playwright CDP connection to Chrome, sends messages to Zoom web client
+- **TUI** (`tui.py`) - Textual app with slide list and link preview screens
+- **Config** (`config.py`) - Paths and constants
 
 ## Technology Stack
 
 - **Python 3.10+** - Core implementation
 - **Click** - CLI framework
+- **Textual** - Terminal UI framework
+- **Playwright** - Chrome DevTools Protocol for Zoom interaction
+- **google-api-python-client** - Google Slides API
+- **keyring** - Secure OAuth token storage
 - **uv** - Package management and virtual environments
 - **pytest** - Testing framework
-- **ruff** - Linting and formatting
 
 ## Directory Structure
 
 ```
 google-slidebot/
-├── src/google_slidebot/    # Source code
+├── src/google_slidebot/
 │   ├── __init__.py
-│   └── cli.py               # CLI entry point
-├── tests/                   # Test files
+│   ├── cli.py               # CLI entry point
+│   ├── config.py            # Configuration constants
+│   ├── slides.py            # Google Slides API integration
+│   ├── tui.py               # Textual TUI screens
+│   └── zoom_chat.py         # Zoom chat via CDP
+├── tests/
 │   ├── conftest.py          # Shared fixtures
-│   └── test_cli.py          # CLI tests
+│   ├── test_cli.py
+│   ├── test_config.py
+│   ├── test_slides.py
+│   ├── test_tui.py
+│   └── test_zoom_chat.py
 ├── pyproject.toml           # Project configuration
 ├── Makefile                 # Development commands
 └── CLAUDE.md                # This file
@@ -46,6 +65,7 @@ make check         # Run lint + format + test
 make test                    # Run all tests
 make quick-test              # Run tests, stop on first failure
 make test-coverage           # Run with coverage report
+uv run pytest -v             # Run with verbose output
 ```
 
 ## Development Workflow
@@ -53,3 +73,10 @@ make test-coverage           # Run with coverage report
 1. Write tests first (TDD)
 2. Implement minimal code to pass
 3. Run `make check` before committing
+
+## Key Implementation Notes
+
+- Zoom web client runs in an iframe; JavaScript injection navigates the iframe DOM
+- OAuth tokens stored in system keychain via `keyring` library
+- Unicode characters (curly quotes, etc.) normalized to ASCII for Zoom compatibility
+- ListView selection uses `on_list_view_selected` event, not key bindings
