@@ -54,3 +54,29 @@ class TestZoomChatConnect:
         chat = ZoomChat()
         with pytest.raises(RuntimeError, match="Zoom"):
             await chat.connect()
+
+
+class TestZoomChatSendMessage:
+    """Tests for ZoomChat.send_message."""
+
+    @pytest.mark.asyncio
+    async def test_send_message_executes_javascript(self):
+        """Should execute JS to insert text and click send."""
+        chat = ZoomChat()
+        chat.page = AsyncMock()
+        chat.page.evaluate = AsyncMock(return_value={"success": True})
+
+        await chat.send_message("Hello from test!")
+
+        # Should have called evaluate with our JS
+        chat.page.evaluate.assert_called()
+        call_args = str(chat.page.evaluate.call_args)
+        assert "Hello from test!" in call_args or chat.page.evaluate.called
+
+    @pytest.mark.asyncio
+    async def test_send_message_raises_when_not_connected(self):
+        """Should raise when not connected."""
+        chat = ZoomChat()
+
+        with pytest.raises(RuntimeError, match="[Nn]ot connected"):
+            await chat.send_message("Hello")

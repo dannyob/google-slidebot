@@ -44,3 +44,65 @@ class ZoomChat:
         """Disconnect from Chrome."""
         if self.playwright:
             await self.playwright.stop()
+
+    async def send_message(self, text: str) -> None:
+        """Send a message to Zoom chat.
+
+        Opens chat panel if needed, inserts text, and clicks send.
+
+        Args:
+            text: Message text to send
+
+        Raises:
+            RuntimeError: If not connected or send fails
+        """
+        if not self.page:
+            raise RuntimeError("Not connected. Call connect() first.")
+
+        # JavaScript to send message via iframe
+        js_code = """
+        async (text) => {
+            const iframe = document.querySelector('iframe#webclient');
+            if (!iframe) throw new Error('Zoom iframe not found');
+
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            if (!iframeDoc) throw new Error('Cannot access iframe document');
+
+            // Open chat panel if needed
+            let chatInput = iframeDoc.querySelector('.tiptap.ProseMirror');
+            if (!chatInput) {
+                const openBtn = iframeDoc.querySelector('button[aria-label="open the chat panel"]');
+                if (openBtn) {
+                    openBtn.click();
+                    await new Promise(r => setTimeout(r, 500));
+                    chatInput = iframeDoc.querySelector('.tiptap.ProseMirror');
+                }
+            }
+
+            if (!chatInput) throw new Error('Chat input not found');
+
+            // Focus and insert text
+            chatInput.focus();
+            iframeDoc.execCommand('insertText', false, text);
+
+            // Dispatch input event to enable send button
+            chatInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+            // Wait a moment for button to enable
+            await new Promise(r => setTimeout(r, 100));
+
+            // Click send with full mouse event sequence
+            const sendBtn = iframeDoc.querySelector('button[aria-label="send"]');
+            if (!sendBtn) throw new Error('Send button not found');
+
+            sendBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: iframe.contentWindow }));
+            sendBtn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: iframe.contentWindow }));
+            sendBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: iframe.contentWindow }));
+
+            return { success: true };
+        }
+        """
+
+        result = await self.page.evaluate(js_code, text)
+        if not result.get("success"):
+            raise RuntimeError(f"Failed to send message: {result}")
