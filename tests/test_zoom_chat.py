@@ -3,7 +3,8 @@
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 
-from google_slidebot.zoom_chat import ZoomChat
+from google_slidebot.zoom_chat import ZoomChat, format_links_message
+from google_slidebot.slides import Slide, Link
 
 
 class TestZoomChatConnect:
@@ -80,3 +81,41 @@ class TestZoomChatSendMessage:
 
         with pytest.raises(RuntimeError, match="[Nn]ot connected"):
             await chat.send_message("Hello")
+
+
+class TestFormatLinksMessage:
+    """Tests for format_links_message."""
+
+    def test_formats_single_link(self):
+        """Should format slide with one link."""
+        slide = Slide(
+            number=1,
+            title="Introduction",
+            links=[Link(text="Docs", url="https://docs.example.com")]
+        )
+        result = format_links_message(slide)
+        assert "Slide 1" in result
+        assert "Introduction" in result
+        assert "Docs" in result
+        assert "https://docs.example.com" in result
+
+    def test_formats_multiple_links(self):
+        """Should format slide with multiple links."""
+        slide = Slide(
+            number=3,
+            title="Resources",
+            links=[
+                Link(text="GitHub", url="https://github.com/example"),
+                Link(text="API", url="https://api.example.com"),
+            ]
+        )
+        result = format_links_message(slide)
+        assert "GitHub" in result
+        assert "API" in result
+        assert result.count("https://") == 2
+
+    def test_handles_empty_links(self):
+        """Should return appropriate message for no links."""
+        slide = Slide(number=2, title="No Links", links=[])
+        result = format_links_message(slide)
+        assert "no links" in result.lower() or result == ""

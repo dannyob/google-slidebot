@@ -3,6 +3,7 @@
 from playwright.async_api import async_playwright, Page
 
 from google_slidebot.config import CDP_URL
+from google_slidebot.slides import Slide
 
 
 class ZoomChat:
@@ -106,3 +107,22 @@ class ZoomChat:
         result = await self.page.evaluate(js_code, text)
         if not result.get("success"):
             raise RuntimeError(f"Failed to send message: {result}")
+
+
+def format_links_message(slide: Slide) -> str:
+    """Format slide links for Zoom chat.
+
+    Args:
+        slide: Slide with links to format
+
+    Returns:
+        Formatted message string
+    """
+    if not slide.links:
+        return f"Slide {slide.number} ({slide.title}) has no links."
+
+    lines = [f"Links from Slide {slide.number}: {slide.title}"]
+    for link in slide.links:
+        lines.append(f"• {link.text}: {link.url}")
+
+    return "\n".join(lines)
