@@ -49,3 +49,44 @@ class SlideListScreen(Screen):
     def action_quit(self) -> None:
         """Quit the application."""
         self.app.exit()
+
+
+class LinkPreviewScreen(Screen):
+    """Screen showing links for a single slide."""
+
+    BINDINGS = [
+        Binding("enter", "send", "Send to Chat"),
+        Binding("escape", "back", "Back"),
+    ]
+
+    def __init__(self, slide: Slide, **kwargs):
+        super().__init__(**kwargs)
+        self.slide = slide
+
+    def _build_content(self) -> str:
+        """Build display content for the slide."""
+        lines = [f"Slide {self.slide.number}: {self.slide.title}", ""]
+
+        if not self.slide.links:
+            lines.append("This slide has no links.")
+        else:
+            for i, link in enumerate(self.slide.links, 1):
+                lines.append(f"{i}. {link.text}")
+                lines.append(f"   {link.url}")
+                lines.append("")
+
+        return "\n".join(lines)
+
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield Static(self._build_content(), id="link-content")
+        yield Footer()
+
+    def action_send(self) -> None:
+        """Send links to Zoom chat."""
+        # Will be connected to ZoomChat in the app
+        self.app.send_links(self.slide)
+
+    def action_back(self) -> None:
+        """Go back to slide list."""
+        self.app.pop_screen()
