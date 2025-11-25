@@ -1,0 +1,25 @@
+[project]
+name = "google-slidebot"
+version = "0.1.0"
+description = "Share Google Slides links to Zoom chat during presentations"
+requires-python = ">=3.10"
+dependencies = [
+    "click>=8.0",
+    "textual>=0.40",
+    "playwright>=1.40",
+    "google-api-python-client>=2.0",
+    "google-auth-oauthlib>=1.0",
+    "google-auth-httplib2>=0.2",
+    "keyring>=24.0",
+]
+
+[project.scripts]
+google-slidebot = "google_slidebot.cli:cli"
+
+[build-system]
+requires = ["uv_build>=0.9.6,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
